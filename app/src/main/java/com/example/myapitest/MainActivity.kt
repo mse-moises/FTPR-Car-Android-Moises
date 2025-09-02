@@ -3,6 +3,12 @@ package com.example.myapitest
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.myapitest.databinding.ActivityMainBinding
+import com.example.myapitest.service.RetrofitClient
+import com.example.myapitest.service.safeApiCall
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,7 +38,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        fetchItems()
+        fetchCars()
     }
 
     private fun setupView() {
@@ -43,7 +49,11 @@ class MainActivity : AppCompatActivity() {
         // TODO
     }
 
-    private fun fetchItems() {
-        // TODO
+    private fun fetchCars() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val result = safeApiCall { RetrofitClient.apiService.getCars() }
+        }
     }
+
+
 }
