@@ -52,6 +52,7 @@ class MainActivity : AppCompatActivity() {
     private fun fetchCars() {
         CoroutineScope(Dispatchers.IO).launch {
             val result = safeApiCall { RetrofitClient.apiService.getCars() }
+            println(result.toString());
         }
     }
 
