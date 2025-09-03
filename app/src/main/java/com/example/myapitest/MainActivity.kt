@@ -1,7 +1,10 @@
 package com.example.myapitest
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.myapitest.adapter.CarAdapter
 import com.example.myapitest.databinding.ActivityMainBinding
 import com.example.myapitest.service.RetrofitClient
 import com.example.myapitest.service.safeApiCall
@@ -9,6 +12,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import com.example.myapitest.service.Result
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,7 +47,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupView() {
-        // TODO
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
     }
 
     private fun requestLocationPermission() {
@@ -52,7 +57,20 @@ class MainActivity : AppCompatActivity() {
     private fun fetchCars() {
         CoroutineScope(Dispatchers.IO).launch {
             val result = safeApiCall { RetrofitClient.apiService.getCars() }
-            println(result.toString());
+
+            withContext(Dispatchers.Main){
+                when(result){
+                    is Result.Success -> {
+                        val adapter = CarAdapter(result.data)
+                        binding.recyclerView.adapter = adapter
+                    }
+                    is Result.Error -> {
+                        Toast.makeText(this@MainActivity, "Erro", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+
         }
     }
 
