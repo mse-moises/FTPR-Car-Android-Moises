@@ -11,7 +11,8 @@ import com.example.myapitest.R
 import com.bumptech.glide.Glide
 
 class CarAdapter(
-    private val cars: List<Car>
+    private val cars: List<Car>,
+    private val onItemClick: (Car) -> Unit
 ) : RecyclerView.Adapter<CarAdapter.ItemViewHolder>(){
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CarAdapter.ItemViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_car_layout, parent, false)
@@ -28,7 +29,9 @@ class CarAdapter(
             .load(car.imageUrl)
             .into(holder.imageView)
 
-
+        holder.itemView.setOnClickListener {
+            onItemClick(car)
+        }
     }
 
     override fun getItemCount(): Int = cars.size;

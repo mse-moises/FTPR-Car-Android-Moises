@@ -1,0 +1,85 @@
+package com.example.myapitest
+
+import android.os.Bundle
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.example.myapitest.model.Car
+import com.example.myapitest.model.Place
+import com.example.myapitest.service.RetrofitClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+class EditCarActivity : AppCompatActivity() {
+    private lateinit var edtModel: EditText
+    private lateinit var edtYear: EditText
+    private lateinit var edtPrice: EditText
+    private lateinit var btnUpdate: Button
+    private var carId: String = ""
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_new_car) // Reusing the same layout
+
+        edtModel = findViewById(R.id.edtModel)
+        edtYear = findViewById(R.id.edtYear)
+        edtPrice = findViewById(R.id.edtPrice)
+        btnUpdate = findViewById(R.id.btnSave)
+        btnUpdate.text = "Atualizar" // Change button text to Update
+
+        // Get car data from intent
+        carId = intent.getStringExtra("car_id") ?: ""
+        edtModel.setText(intent.getStringExtra("car_name"))
+        edtYear.setText(intent.getStringExtra("car_year"))
+        edtPrice.setText(intent.getStringExtra("car_licence"))
+
+        if (carId.isEmpty()) {
+            Toast.makeText(this, "Erro: ID do carro não fornecido", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        btnUpdate.setOnClickListener {
+            val name = edtModel.text.toString()
+            val year = edtYear.text.toString()
+            val license = edtPrice.text.toString()
+
+            if (name.isBlank() || year.isBlank() || license.isBlank()) {
+                Toast.makeText(this, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val car = Car(
+                id = carId,
+                name = name,
+                year = year,
+                licence = license,
+                imageUrl = intent.getStringExtra("car_image_url") ?: "",
+                place = Place(
+                    lat = intent.getDoubleExtra("car_lat", 0.0),
+                    long = intent.getDoubleExtra("car_long", 0.0)
+                )
+            )
+            updateCar(car)
+        }
+    }
+
+    private fun updateCar(car: Car) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                RetrofitClient.apiService.updateCar(car.id, car)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@EditCarActivity, "Carro atualizado com sucesso", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@EditCarActivity, "Erro ao atualizar: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+}

@@ -26,6 +26,9 @@
         <activity
             android:name=".NewCarActivity"
             android:exported="false" />
+        <activity
+            android:name=".EditCarActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -1,11 +1,13 @@
 package com.example.myapitest
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.myapitest.adapter.CarAdapter
 import com.example.myapitest.databinding.ActivityMainBinding
+import com.example.myapitest.model.Car
 import com.example.myapitest.service.RetrofitClient
 import com.example.myapitest.service.safeApiCall
 import kotlinx.coroutines.CoroutineScope
@@ -57,6 +59,19 @@ class MainActivity : AppCompatActivity() {
         // TODO
     }
 
+    private fun openEditCarActivity(car: Car) {
+        val intent = Intent(this, EditCarActivity::class.java).apply {
+            putExtra("car_id", car.id)
+            putExtra("car_name", car.name)
+            putExtra("car_year", car.year)
+            putExtra("car_licence", car.licence)
+            putExtra("car_image_url", car.imageUrl)
+            putExtra("car_lat", car.place.lat)
+            putExtra("car_long", car.place.long)
+        }
+        startActivity(intent)
+    }
+
     private fun fetchCars() {
         CoroutineScope(Dispatchers.IO).launch {
             val result = safeApiCall { RetrofitClient.apiService.getCars() }
@@ -64,7 +79,9 @@ class MainActivity : AppCompatActivity() {
             withContext(Dispatchers.Main){
                 when(result){
                     is Result.Success -> {
-                        val adapter = CarAdapter(result.data)
+                        val adapter = CarAdapter(result.data) { car ->
+                            openEditCarActivity(car)
+                        }
                         binding.recyclerView.adapter = adapter
                     }
                     is Result.Error -> {
