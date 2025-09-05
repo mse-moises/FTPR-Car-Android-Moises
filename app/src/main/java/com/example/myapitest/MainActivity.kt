@@ -48,6 +48,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupView() {
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
+        binding.fabAddCar.setOnClickListener {
+            startActivity(android.content.Intent(this, NewCarActivity::class.java))
+        }
     }
 
     private fun requestLocationPermission() {

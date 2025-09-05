@@ -1,14 +1,17 @@
 package com.example.myapitest.model
 
+import com.google.gson.annotations.SerializedName
+
 data class Place(
-    val lat: Double,
-    val long: Double
+    @SerializedName("lat") val lat: Double,
+    @SerializedName("long") val long: Double
 )
 
 data class Car(
-    val imageUrl: String,
-    val year: String,
-    val name: String,
-    val license: String,
-    val place: Place
+    @SerializedName("id") val id: String,
+    @SerializedName("imageUrl") val imageUrl: String,
+    @SerializedName("year") val year: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("licence") val licence: String,
+    @SerializedName("place") val place: Place
 )

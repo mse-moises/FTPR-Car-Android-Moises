@@ -22,7 +22,7 @@ class CarAdapter(
         val car = cars[position]
         holder.model.text = car.name
         holder.year.text = car.year
-        holder.license.text = car.license
+        holder.license.text = car.licence
         
         Glide.with(holder.itemView.context)
             .load(car.imageUrl)
