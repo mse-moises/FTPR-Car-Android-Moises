@@ -2,14 +2,19 @@ package com.example.myapitest
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.myapitest.adapter.CarAdapter
+import com.example.myapitest.auth.GoogleSignInHelper
+import com.example.myapitest.auth.LoginActivity
 import com.example.myapitest.databinding.ActivityMainBinding
 import com.example.myapitest.model.Car
 import com.example.myapitest.service.RetrofitClient
 import com.example.myapitest.service.safeApiCall
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,11 +25,16 @@ import kotlinx.coroutines.withContext
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var googleSignInHelper: GoogleSignInHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setSupportActionBar(binding.toolbar)
+        
+        googleSignInHelper = GoogleSignInHelper(this)
+        
         requestLocationPermission()
         setupView()
 
@@ -51,12 +61,39 @@ class MainActivity : AppCompatActivity() {
     private fun setupView() {
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.fabAddCar.setOnClickListener {
-            startActivity(android.content.Intent(this, NewCarActivity::class.java))
+            startActivity(Intent(this, NewCarActivity::class.java))
         }
     }
 
     private fun requestLocationPermission() {
         // TODO
+    }
+    
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_logout -> {
+                performLogout()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun performLogout() {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                googleSignInHelper.signOut()
+                startActivity(Intent(this@MainActivity, LoginActivity::class.java))
+                finish()
+            } catch (e: Exception) {
+                Snackbar.make(binding.root, "Erro ao fazer logout", Snackbar.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun openEditCarActivity(car: Car) {
