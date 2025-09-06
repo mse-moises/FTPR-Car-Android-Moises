@@ -43,6 +43,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         setupClickListeners()
+        setupPhoneAuthButton()
     }
 
     private fun setupClickListeners() {
@@ -54,6 +55,13 @@ class LoginActivity : AppCompatActivity() {
     private fun onSignInSuccess() {
         Snackbar.make(binding.root, "Login realizado com sucesso!", Snackbar.LENGTH_SHORT).show()
         startMainActivity()
+    }
+
+    private fun setupPhoneAuthButton() {
+        binding.phoneAuthButton.setOnClickListener {
+            startActivity(Intent(this, PhoneAuthActivity::class.java))
+            finish()
+        }
     }
 
     private fun startMainActivity() {

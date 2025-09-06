@@ -26,6 +26,10 @@
         <activity
             android:name=".MainActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".auth.PhoneAuthActivity"
+            android:exported="false" />
         <activity
             android:name=".NewCarActivity"
             android:exported="false" />
