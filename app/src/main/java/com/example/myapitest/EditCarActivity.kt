@@ -14,6 +14,7 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.widget.addTextChangedListener
 import com.google.firebase.storage.FirebaseStorage
 import com.bumptech.glide.Glide
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -73,8 +74,19 @@ class EditCarActivity : AppCompatActivity(), OnMapReadyCallback {
                 selectedLong = intent.getDoubleExtra("longitude", 0.0)
                 tvCoordinates.text = "Coordenadas: $selectedLat, $selectedLong"
                 updateMapLocation()
+                validateFields()
             }
         }
+    }
+
+    private fun validateFields() {
+        val isNameValid = edtModel.text.toString().isNotBlank()
+        val isYearValid = edtYear.text.toString().isNotBlank()
+        val isLicenseValid = edtPrice.text.toString().isNotBlank()
+        val isLocationValid = selectedLat != 0.0 || selectedLong != 0.0
+        val isImageValid = selectedImageUri != null || intent.getStringExtra("car_image_url")?.isNotEmpty() == true
+
+        btnUpdate.isEnabled = isNameValid && isYearValid && isLicenseValid && isLocationValid && isImageValid
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -99,6 +111,11 @@ class EditCarActivity : AppCompatActivity(), OnMapReadyCallback {
         uploadProgressContainer = findViewById(R.id.uploadProgressContainer)
         uploadProgressBar = findViewById(R.id.uploadProgressBar)
         tvUploadProgress = findViewById(R.id.tvUploadProgress)
+
+        // Adiciona listeners para validar os campos
+        edtModel.addTextChangedListener { validateFields() }
+        edtYear.addTextChangedListener { validateFields() }
+        edtPrice.addTextChangedListener { validateFields() }
 
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.mapView) as SupportMapFragment
@@ -231,6 +248,10 @@ class EditCarActivity : AppCompatActivity(), OnMapReadyCallback {
                 
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@EditCarActivity, "Carro atualizado com sucesso", Toast.LENGTH_SHORT).show()
+                    // Volta para a home limpando a pilha de activities
+                    val intent = Intent(this@EditCarActivity, MainActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    startActivity(intent)
                     finish()
                 }
             } catch (e: Exception) {

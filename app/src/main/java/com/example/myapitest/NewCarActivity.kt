@@ -4,12 +4,22 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.MenuItem
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.myapitest.model.Car
 import com.example.myapitest.model.Place
@@ -21,7 +31,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
-class NewCarActivity : AppCompatActivity() {
+class NewCarActivity : AppCompatActivity(), OnMapReadyCallback {
+    private var googleMap: GoogleMap? = null
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
@@ -38,6 +49,8 @@ class NewCarActivity : AppCompatActivity() {
                 selectedLat = intent.getDoubleExtra("latitude", 0.0)
                 selectedLong = intent.getDoubleExtra("longitude", 0.0)
                 tvCoordinates.text = "Coordenadas: $selectedLat, $selectedLong"
+                updateMapLocation()
+                validateFields()
             }
         }
     }
@@ -49,6 +62,9 @@ class NewCarActivity : AppCompatActivity() {
     private lateinit var btnSelectImage: Button
     private lateinit var imgPreview: ImageView
     private lateinit var tvCoordinates: TextView
+    private lateinit var uploadProgressContainer: LinearLayout
+    private lateinit var uploadProgressBar: ProgressBar
+    private lateinit var tvUploadProgress: TextView
     private var selectedLat: Double = 0.0
     private var selectedLong: Double = 0.0
     private var selectedImageUri: Uri? = null
@@ -57,6 +73,7 @@ class NewCarActivity : AppCompatActivity() {
         uri?.let {
             selectedImageUri = it
             imgPreview.setImageURI(it)
+            validateFields()
         }
     }
 
@@ -78,6 +95,22 @@ class NewCarActivity : AppCompatActivity() {
         btnSelectImage = findViewById(R.id.btnSelectImage)
         imgPreview = findViewById(R.id.imgPreview)
         tvCoordinates = findViewById(R.id.tvCoordinates)
+        uploadProgressContainer = findViewById(R.id.uploadProgressContainer)
+        uploadProgressBar = findViewById(R.id.uploadProgressBar)
+        tvUploadProgress = findViewById(R.id.tvUploadProgress)
+
+        // Inicializa o mapa
+        val mapFragment = supportFragmentManager
+            .findFragmentById(R.id.mapView) as SupportMapFragment
+        mapFragment.getMapAsync(this)
+
+        // Desabilita o botão inicialmente
+        btnSave.isEnabled = false
+
+        // Adiciona listeners para validar os campos
+        edtModel.addTextChangedListener { validateFields() }
+        edtYear.addTextChangedListener { validateFields() }
+        edtPrice.addTextChangedListener { validateFields() }
         
         btnSelectImage.setOnClickListener {
             imagePickerLauncher.launch("image/*")
@@ -119,15 +152,65 @@ class NewCarActivity : AppCompatActivity() {
         }
     }
 
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        map.uiSettings.setAllGesturesEnabled(false)
+        updateMapLocation()
+    }
+
+    private fun updateMapLocation() {
+        googleMap?.let { map ->
+            val location = LatLng(selectedLat, selectedLong)
+            map.clear()
+            map.addMarker(MarkerOptions()
+                .position(location)
+                .title("Localização do Carro"))
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+        }
+    }
+
+    private fun validateFields() {
+        val isNameValid = edtModel.text.toString().isNotBlank()
+        val isYearValid = edtYear.text.toString().isNotBlank()
+        val isLicenseValid = edtPrice.text.toString().isNotBlank()
+        val isLocationValid = selectedLat != 0.0 || selectedLong != 0.0
+        val isImageValid = selectedImageUri != null
+
+        btnSave.isEnabled = isNameValid && isYearValid && isLicenseValid && isLocationValid && isImageValid
+    }
+
     private fun saveCar(car: Car) {
         if (selectedImageUri == null) {
             Toast.makeText(this, "Selecione uma imagem", Toast.LENGTH_SHORT).show()
             return
         }
 
+        // Desabilita o botão e mostra loading
+        btnSave.isEnabled = false
+        uploadProgressContainer.visibility = View.VISIBLE
+        uploadProgressBar.progress = 0
+        tvUploadProgress.text = "Iniciando upload..."
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val imageUrl = uploadImage(selectedImageUri!!)
+                // Upload da imagem com progresso
+                val imageUrl = withContext(Dispatchers.IO) {
+                    val storageRef = FirebaseStorage.getInstance().reference
+                    val imageRef = storageRef.child("cars/${System.currentTimeMillis()}_${selectedImageUri!!.lastPathSegment}")
+                    val uploadTask = imageRef.putFile(selectedImageUri!!)
+
+                    uploadTask.addOnProgressListener { taskSnapshot ->
+                        val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+                        runOnUiThread {
+                            uploadProgressBar.progress = progress
+                            tvUploadProgress.text = "Fazendo upload: $progress%"
+                        }
+                    }
+
+                    uploadTask.await()
+                    imageRef.downloadUrl.await().toString()
+                }
+
                 val carWithImage = car.copy(imageUrl = imageUrl)
                 RetrofitClient.apiService.createCar(carWithImage)
                 
@@ -138,6 +221,8 @@ class NewCarActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@NewCarActivity, "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT).show()
+                    btnSave.isEnabled = true
+                    uploadProgressContainer.visibility = View.GONE
                 }
             }
         }
