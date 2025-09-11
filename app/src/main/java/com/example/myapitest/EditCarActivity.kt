@@ -10,6 +10,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import com.google.firebase.storage.FirebaseStorage
 import com.example.myapitest.model.Car
 import com.example.myapitest.model.Place
 import com.example.myapitest.service.RetrofitClient
@@ -17,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.tasks.await
 
 class EditCarActivity : AppCompatActivity() {
     private lateinit var edtModel: EditText
@@ -118,7 +120,21 @@ class EditCarActivity : AppCompatActivity() {
     private fun updateCar(car: Car) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                RetrofitClient.apiService.updateCar(car.id, car)
+                var imageUrl = car.imageUrl
+                selectedImageUri?.let { uri ->
+                    val storage = FirebaseStorage.getInstance()
+                    val storageRef = storage.reference
+                    val imageRef = storageRef.child("cars/${System.currentTimeMillis()}_${uri.lastPathSegment}")
+                    
+                    imageUrl = withContext(Dispatchers.IO) {
+                        imageRef.putFile(uri).await()
+                        imageRef.downloadUrl.await().toString()
+                    }
+                }
+
+                val updatedCar = car.copy(imageUrl = imageUrl)
+                RetrofitClient.apiService.updateCar(car.id, updatedCar)
+                
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@EditCarActivity, "Carro atualizado com sucesso", Toast.LENGTH_SHORT).show()
                     finish()
