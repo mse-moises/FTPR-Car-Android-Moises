@@ -57,8 +57,32 @@
         android:id="@+id/btnSelectImage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="8dp"
         android:text="Selecionar Imagem" />
+
+    <LinearLayout
+        android:id="@+id/uploadProgressContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/tvUploadProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Fazendo upload: 0%"
+            android:gravity="center"
+            android:layout_marginBottom="4dp"/>
+
+        <ProgressBar
+            android:id="@+id/uploadProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100" />
+    </LinearLayout>
 
     <Button
         android:id="@+id/btnSave"

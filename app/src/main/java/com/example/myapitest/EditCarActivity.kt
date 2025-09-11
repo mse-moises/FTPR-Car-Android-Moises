@@ -3,9 +3,12 @@ package com.example.myapitest
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -29,6 +32,9 @@ class EditCarActivity : AppCompatActivity() {
     private lateinit var btnSelectImage: Button
     private lateinit var imgPreview: ImageView
     private lateinit var tvCoordinates: TextView
+    private lateinit var uploadProgressContainer: LinearLayout
+    private lateinit var uploadProgressBar: ProgressBar
+    private lateinit var tvUploadProgress: TextView
     private var carId: String = ""
     private var selectedLat: Double = 0.0
     private var selectedLong: Double = 0.0
@@ -64,6 +70,9 @@ class EditCarActivity : AppCompatActivity() {
         btnSelectImage = findViewById(R.id.btnSelectImage)
         imgPreview = findViewById(R.id.imgPreview)
         tvCoordinates = findViewById(R.id.tvCoordinates)
+        uploadProgressContainer = findViewById(R.id.uploadProgressContainer)
+        uploadProgressBar = findViewById(R.id.uploadProgressBar)
+        tvUploadProgress = findViewById(R.id.tvUploadProgress)
 
         btnSelectImage.setOnClickListener {
             imagePickerLauncher.launch("image/*")
@@ -122,13 +131,42 @@ class EditCarActivity : AppCompatActivity() {
             try {
                 var imageUrl = car.imageUrl
                 selectedImageUri?.let { uri ->
-                    val storage = FirebaseStorage.getInstance()
-                    val storageRef = storage.reference
-                    val imageRef = storageRef.child("cars/${System.currentTimeMillis()}_${uri.lastPathSegment}")
-                    
-                    imageUrl = withContext(Dispatchers.IO) {
-                        imageRef.putFile(uri).await()
-                        imageRef.downloadUrl.await().toString()
+                    withContext(Dispatchers.Main) {
+                        uploadProgressContainer.visibility = View.VISIBLE
+                        btnUpdate.isEnabled = false
+                        uploadProgressBar.progress = 0
+                        tvUploadProgress.text = "Iniciando upload..."
+                    }
+
+                    try {
+                        val storage = FirebaseStorage.getInstance()
+                        val storageRef = storage.reference
+                        val imageRef = storageRef.child("cars/${System.currentTimeMillis()}_${uri.lastPathSegment}")
+                        
+                        imageUrl = withContext(Dispatchers.IO) {
+                            val uploadTask = imageRef.putFile(uri)
+                            
+                            uploadTask.addOnProgressListener { taskSnapshot ->
+                                val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+                                runOnUiThread {
+                                    uploadProgressBar.progress = progress
+                                    tvUploadProgress.text = "Fazendo upload: $progress%"
+                                }
+                            }
+
+                            uploadTask.await()
+                            imageRef.downloadUrl.await().toString()
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@EditCarActivity, "Erro no upload: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                        throw e
+                    } finally {
+                        withContext(Dispatchers.Main) {
+                            uploadProgressContainer.visibility = View.GONE
+                            btnUpdate.isEnabled = true
+                        }
                     }
                 }
 
