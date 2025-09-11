@@ -63,6 +63,9 @@ class MainActivity : AppCompatActivity() {
         binding.fabAddCar.setOnClickListener {
             startActivity(Intent(this, NewCarActivity::class.java))
         }
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            fetchCars()
+        }
     }
 
     private fun requestLocationPermission() {
@@ -120,9 +123,11 @@ class MainActivity : AppCompatActivity() {
                             openEditCarActivity(car)
                         }
                         binding.recyclerView.adapter = adapter
+                        binding.swipeRefreshLayout.isRefreshing = false
                     }
                     is Result.Error -> {
                         Toast.makeText(this@MainActivity, "Erro", Toast.LENGTH_SHORT).show()
+                        binding.swipeRefreshLayout.isRefreshing = false
                     }
                 }
             }

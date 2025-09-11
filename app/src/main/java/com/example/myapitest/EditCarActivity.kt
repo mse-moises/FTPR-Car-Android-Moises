@@ -1,9 +1,11 @@
 package com.example.myapitest
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -22,10 +24,20 @@ class EditCarActivity : AppCompatActivity() {
     private lateinit var edtPrice: EditText
     private lateinit var btnUpdate: Button
     private lateinit var btnSelectLocation: Button
+    private lateinit var btnSelectImage: Button
+    private lateinit var imgPreview: ImageView
     private lateinit var tvCoordinates: TextView
     private var carId: String = ""
     private var selectedLat: Double = 0.0
     private var selectedLong: Double = 0.0
+    private var selectedImageUri: Uri? = null
+
+    private val imagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            selectedImageUri = it
+            imgPreview.setImageURI(it)
+        }
+    }
 
     private val mapLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
@@ -47,7 +59,13 @@ class EditCarActivity : AppCompatActivity() {
         btnUpdate = findViewById(R.id.btnSave)
         btnUpdate.text = "Atualizar" // Change button text to Update
         btnSelectLocation = findViewById(R.id.btnSelectLocation)
+        btnSelectImage = findViewById(R.id.btnSelectImage)
+        imgPreview = findViewById(R.id.imgPreview)
         tvCoordinates = findViewById(R.id.tvCoordinates)
+
+        btnSelectImage.setOnClickListener {
+            imagePickerLauncher.launch("image/*")
+        }
 
         selectedLat = intent.getDoubleExtra("car_lat", 0.0)
         selectedLong = intent.getDoubleExtra("car_long", 0.0)
