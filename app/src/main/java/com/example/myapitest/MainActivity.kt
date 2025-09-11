@@ -2,6 +2,7 @@ package com.example.myapitest
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -124,6 +125,10 @@ class MainActivity : AppCompatActivity() {
                         }
                         binding.recyclerView.adapter = adapter
                         binding.swipeRefreshLayout.isRefreshing = false
+                        
+                        // Mostra/esconde o estado vazio
+                        binding.emptyStateText.visibility = if (result.data.isEmpty()) View.VISIBLE else View.GONE
+                        binding.recyclerView.visibility = if (result.data.isEmpty()) View.GONE else View.VISIBLE
                     }
                     is Result.Error -> {
                         Toast.makeText(this@MainActivity, "Erro", Toast.LENGTH_SHORT).show()
