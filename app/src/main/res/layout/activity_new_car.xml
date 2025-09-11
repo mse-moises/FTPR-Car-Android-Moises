@@ -44,6 +44,22 @@
         android:gravity="center"
         android:text="Coordenadas: Não selecionadas" />
 
+    <ImageView
+        android:id="@+id/imgPreview"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="16dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_add_photo" />
+
+    <Button
+        android:id="@+id/btnSelectImage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="Selecionar Imagem" />
+
     <Button
         android:id="@+id/btnSave"
         android:layout_width="match_parent"

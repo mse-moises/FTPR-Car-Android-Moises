@@ -1,9 +1,11 @@
 package com.example.myapitest
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -11,9 +13,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.example.myapitest.model.Car
 import com.example.myapitest.model.Place
 import com.example.myapitest.service.RetrofitClient
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class NewCarActivity : AppCompatActivity() {
@@ -31,9 +35,19 @@ class NewCarActivity : AppCompatActivity() {
     private lateinit var edtPrice: EditText
     private lateinit var btnSave: Button
     private lateinit var btnSelectLocation: Button
+    private lateinit var btnSelectImage: Button
+    private lateinit var imgPreview: ImageView
     private lateinit var tvCoordinates: TextView
     private var selectedLat: Double = 0.0
     private var selectedLong: Double = 0.0
+    private var selectedImageUri: Uri? = null
+    
+    private val imagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            selectedImageUri = it
+            imgPreview.setImageURI(it)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,7 +58,13 @@ class NewCarActivity : AppCompatActivity() {
         edtPrice = findViewById(R.id.edtPrice)
         btnSave = findViewById(R.id.btnSave)
         btnSelectLocation = findViewById(R.id.btnSelectLocation)
+        btnSelectImage = findViewById(R.id.btnSelectImage)
+        imgPreview = findViewById(R.id.imgPreview)
         tvCoordinates = findViewById(R.id.tvCoordinates)
+        
+        btnSelectImage.setOnClickListener {
+            imagePickerLauncher.launch("image/*")
+        }
 
         btnSelectLocation.setOnClickListener {
             val intent = Intent(this, MapActivity::class.java)
@@ -73,10 +93,27 @@ class NewCarActivity : AppCompatActivity() {
         }
     }
 
+    private suspend fun uploadImage(uri: Uri): String {
+        return withContext(Dispatchers.IO) {
+            val storageRef = FirebaseStorage.getInstance().reference
+            val imageRef = storageRef.child("cars/${System.currentTimeMillis()}.jpg")
+            imageRef.putFile(uri).await()
+            imageRef.downloadUrl.await().toString()
+        }
+    }
+
     private fun saveCar(car: Car) {
+        if (selectedImageUri == null) {
+            Toast.makeText(this, "Selecione uma imagem", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                RetrofitClient.apiService.createCar(car)
+                val imageUrl = uploadImage(selectedImageUri!!)
+                val carWithImage = car.copy(imageUrl = imageUrl)
+                RetrofitClient.apiService.createCar(carWithImage)
+                
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@NewCarActivity, "Carro salvo com sucesso", Toast.LENGTH_SHORT).show()
                     finish()
