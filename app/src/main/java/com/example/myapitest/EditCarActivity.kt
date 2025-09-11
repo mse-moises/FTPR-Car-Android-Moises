@@ -10,11 +10,18 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.firebase.storage.FirebaseStorage
 import com.bumptech.glide.Glide
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.example.myapitest.model.Car
 import com.example.myapitest.model.Place
 import com.example.myapitest.service.RetrofitClient
@@ -24,7 +31,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
 
-class EditCarActivity : AppCompatActivity() {
+class EditCarActivity : AppCompatActivity(), OnMapReadyCallback {
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                onBackPressed()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
     private lateinit var edtModel: EditText
     private lateinit var edtYear: EditText
     private lateinit var edtPrice: EditText
@@ -39,6 +56,7 @@ class EditCarActivity : AppCompatActivity() {
     private var carId: String = ""
     private var selectedLat: Double = 0.0
     private var selectedLong: Double = 0.0
+    private var googleMap: GoogleMap? = null
     private var selectedImageUri: Uri? = null
 
     private val imagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -54,19 +72,26 @@ class EditCarActivity : AppCompatActivity() {
                 selectedLat = intent.getDoubleExtra("latitude", 0.0)
                 selectedLong = intent.getDoubleExtra("longitude", 0.0)
                 tvCoordinates.text = "Coordenadas: $selectedLat, $selectedLong"
+                updateMapLocation()
             }
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_new_car) // Reusing the same layout
+        setContentView(R.layout.activity_car_form)
+
+        setSupportActionBar(findViewById(R.id.toolbar))
+        supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(true)
+            title = "Editar Carro"
+        }
 
         edtModel = findViewById(R.id.edtModel)
         edtYear = findViewById(R.id.edtYear)
         edtPrice = findViewById(R.id.edtPrice)
         btnUpdate = findViewById(R.id.btnSave)
-        btnUpdate.text = "Atualizar" // Change button text to Update
+        btnUpdate.text = "Atualizar"
         btnSelectLocation = findViewById(R.id.btnSelectLocation)
         btnSelectImage = findViewById(R.id.btnSelectImage)
         imgPreview = findViewById(R.id.imgPreview)
@@ -75,6 +100,10 @@ class EditCarActivity : AppCompatActivity() {
         uploadProgressBar = findViewById(R.id.uploadProgressBar)
         tvUploadProgress = findViewById(R.id.tvUploadProgress)
 
+        val mapFragment = supportFragmentManager
+            .findFragmentById(R.id.mapView) as SupportMapFragment
+        mapFragment.getMapAsync(this)
+
         btnSelectImage.setOnClickListener {
             imagePickerLauncher.launch("image/*")
         }
@@ -82,6 +111,7 @@ class EditCarActivity : AppCompatActivity() {
         selectedLat = intent.getDoubleExtra("car_lat", 0.0)
         selectedLong = intent.getDoubleExtra("car_long", 0.0)
         tvCoordinates.text = "Coordenadas: $selectedLat, $selectedLong"
+        updateMapLocation()
 
         btnSelectLocation.setOnClickListener {
             val intent = Intent(this, MapActivity::class.java)
@@ -132,6 +162,23 @@ class EditCarActivity : AppCompatActivity() {
                 )
             )
             updateCar(car)
+        }
+    }
+
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        map.uiSettings.setAllGesturesEnabled(false)
+        updateMapLocation()
+    }
+
+    private fun updateMapLocation() {
+        googleMap?.let { map ->
+            val location = LatLng(selectedLat, selectedLong)
+            map.clear()
+            map.addMarker(MarkerOptions()
+                .position(location)
+                .title("Localização do Carro"))
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
         }
     }
 

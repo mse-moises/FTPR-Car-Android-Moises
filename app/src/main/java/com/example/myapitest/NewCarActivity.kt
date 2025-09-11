@@ -3,6 +3,7 @@ package com.example.myapitest
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -21,6 +22,16 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class NewCarActivity : AppCompatActivity() {
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                onBackPressed()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
     private val mapLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             result.data?.let { intent ->
@@ -51,7 +62,13 @@ class NewCarActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_new_car)
+        setContentView(R.layout.activity_car_form)
+
+        setSupportActionBar(findViewById(R.id.toolbar))
+        supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(true)
+            title = "Novo Carro"
+        }
 
         edtModel = findViewById(R.id.edtModel)
         edtYear = findViewById(R.id.edtYear)

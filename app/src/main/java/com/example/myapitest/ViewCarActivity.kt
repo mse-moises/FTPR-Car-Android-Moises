@@ -2,6 +2,7 @@ package com.example.myapitest
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.MenuItem
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -15,6 +16,16 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 
 class ViewCarActivity : AppCompatActivity(), OnMapReadyCallback {
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                onBackPressed()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
     private var carLat: Double = 0.0
     private var carLong: Double = 0.0
     private var carName: String = ""
@@ -27,6 +38,12 @@ class ViewCarActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_view_car)
+
+        setSupportActionBar(findViewById(R.id.toolbar))
+        supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(true)
+            title = "Detalhes do Carro"
+        }
 
         imgCar = findViewById(R.id.imgCar)
         tvCarName = findViewById(R.id.tvCarName)
