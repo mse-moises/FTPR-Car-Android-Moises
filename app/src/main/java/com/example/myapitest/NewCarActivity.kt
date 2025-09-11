@@ -1,10 +1,13 @@
 package com.example.myapitest
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.myapitest.model.Car
 import com.example.myapitest.model.Place
 import com.example.myapitest.service.RetrofitClient
@@ -14,10 +17,23 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class NewCarActivity : AppCompatActivity() {
+    private val mapLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            result.data?.let { intent ->
+                selectedLat = intent.getDoubleExtra("latitude", 0.0)
+                selectedLong = intent.getDoubleExtra("longitude", 0.0)
+                tvCoordinates.text = "Coordenadas: $selectedLat, $selectedLong"
+            }
+        }
+    }
     private lateinit var edtModel: EditText
     private lateinit var edtYear: EditText
     private lateinit var edtPrice: EditText
     private lateinit var btnSave: Button
+    private lateinit var btnSelectLocation: Button
+    private lateinit var tvCoordinates: TextView
+    private var selectedLat: Double = 0.0
+    private var selectedLong: Double = 0.0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +43,13 @@ class NewCarActivity : AppCompatActivity() {
         edtYear = findViewById(R.id.edtYear)
         edtPrice = findViewById(R.id.edtPrice)
         btnSave = findViewById(R.id.btnSave)
+        btnSelectLocation = findViewById(R.id.btnSelectLocation)
+        tvCoordinates = findViewById(R.id.tvCoordinates)
+
+        btnSelectLocation.setOnClickListener {
+            val intent = Intent(this, MapActivity::class.java)
+            mapLauncher.launch(intent)
+        }
 
         btnSave.setOnClickListener {
             val name = edtModel.text.toString()
@@ -44,7 +67,7 @@ class NewCarActivity : AppCompatActivity() {
                 year = year,
                 licence = license,
                 imageUrl = "https://cdn.motor1.com/images/mgl/0eJY29/s1/os-50-carros-mais-caros-do-mundo.webp",
-                place = Place(lat = -23.5505, long = -46.6333)
+                place = Place(lat = selectedLat, long = selectedLong)
             )
             saveCar(car)
         }

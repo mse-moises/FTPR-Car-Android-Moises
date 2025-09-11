@@ -1,10 +1,13 @@
 package com.example.myapitest
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.myapitest.model.Car
 import com.example.myapitest.model.Place
 import com.example.myapitest.service.RetrofitClient
@@ -18,7 +21,21 @@ class EditCarActivity : AppCompatActivity() {
     private lateinit var edtYear: EditText
     private lateinit var edtPrice: EditText
     private lateinit var btnUpdate: Button
+    private lateinit var btnSelectLocation: Button
+    private lateinit var tvCoordinates: TextView
     private var carId: String = ""
+    private var selectedLat: Double = 0.0
+    private var selectedLong: Double = 0.0
+
+    private val mapLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            result.data?.let { intent ->
+                selectedLat = intent.getDoubleExtra("latitude", 0.0)
+                selectedLong = intent.getDoubleExtra("longitude", 0.0)
+                tvCoordinates.text = "Coordenadas: $selectedLat, $selectedLong"
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +46,19 @@ class EditCarActivity : AppCompatActivity() {
         edtPrice = findViewById(R.id.edtPrice)
         btnUpdate = findViewById(R.id.btnSave)
         btnUpdate.text = "Atualizar" // Change button text to Update
+        btnSelectLocation = findViewById(R.id.btnSelectLocation)
+        tvCoordinates = findViewById(R.id.tvCoordinates)
+
+        selectedLat = intent.getDoubleExtra("car_lat", 0.0)
+        selectedLong = intent.getDoubleExtra("car_long", 0.0)
+        tvCoordinates.text = "Coordenadas: $selectedLat, $selectedLong"
+
+        btnSelectLocation.setOnClickListener {
+            val intent = Intent(this, MapActivity::class.java)
+            intent.putExtra("latitude", selectedLat)
+            intent.putExtra("longitude", selectedLong)
+            mapLauncher.launch(intent)
+        }
 
         // Get car data from intent
         carId = intent.getStringExtra("car_id") ?: ""
@@ -59,8 +89,8 @@ class EditCarActivity : AppCompatActivity() {
                 licence = license,
                 imageUrl = intent.getStringExtra("car_image_url") ?: "",
                 place = Place(
-                    lat = intent.getDoubleExtra("car_lat", 0.0),
-                    long = intent.getDoubleExtra("car_long", 0.0)
+                    lat = selectedLat,
+                    long = selectedLong
                 )
             )
             updateCar(car)
