@@ -99,8 +99,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openEditCarActivity(car: Car) {
-        val intent = Intent(this, EditCarActivity::class.java).apply {
+    private fun openViewCarActivity(car: Car) {
+        val intent = Intent(this, ViewCarActivity::class.java).apply {
             putExtra("car_id", car.id)
             putExtra("car_name", car.name)
             putExtra("car_year", car.year)
@@ -120,7 +120,7 @@ class MainActivity : AppCompatActivity() {
                 when(result){
                     is Result.Success -> {
                         val adapter = CarAdapter(result.data) { car ->
-                            openEditCarActivity(car)
+                            openViewCarActivity(car)
                         }
                         binding.recyclerView.adapter = adapter
                         binding.swipeRefreshLayout.isRefreshing = false

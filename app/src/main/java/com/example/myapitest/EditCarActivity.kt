@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.firebase.storage.FirebaseStorage
+import com.bumptech.glide.Glide
 import com.example.myapitest.model.Car
 import com.example.myapitest.model.Place
 import com.example.myapitest.service.RetrofitClient
@@ -94,6 +95,14 @@ class EditCarActivity : AppCompatActivity() {
         edtModel.setText(intent.getStringExtra("car_name"))
         edtYear.setText(intent.getStringExtra("car_year"))
         edtPrice.setText(intent.getStringExtra("car_licence"))
+
+        // Carrega a imagem atual do carro
+        val currentImageUrl = intent.getStringExtra("car_image_url")
+        if (!currentImageUrl.isNullOrEmpty()) {
+            Glide.with(this)
+                .load(currentImageUrl)
+                .into(imgPreview)
+        }
 
         if (carId.isEmpty()) {
             Toast.makeText(this, "Erro: ID do carro não fornecido", Toast.LENGTH_SHORT).show()
